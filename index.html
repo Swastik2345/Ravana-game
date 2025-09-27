@@ -59,11 +59,12 @@
     text-align: center;
   }
   #controls {
-    position: absolute;
+    position: fixed;
     bottom: 20px;
     right: 20px;
     display: flex;
     gap: 10px;
+    z-index: 999;
   }
   .ctrlBtn {
     padding: 12px 18px;
@@ -88,10 +89,12 @@
     <div id="scoreBoard">Score: 0</div>
     <div id="timer">Time: 60</div>
     <div id="message"></div>
+
     <div id="controls">
-      <button class="ctrlBtn" onclick="shoot('forward')">⬆ Forward</button>
-      <button class="ctrlBtn" onclick="shoot('right')">➡ Right</button>
+      <button class="ctrlBtn" id="forwardBtn">⬆ Forward</button>
+      <button class="ctrlBtn" id="rightBtn">➡ Right</button>
     </div>
+
     <canvas id="fireworks"></canvas>
   </div>
 
@@ -111,6 +114,8 @@ let arrows = [];
 let heads = [];
 let timeLeft = 60;
 let gameOver = false;
+let shooting = false;
+let shootDirection = null;
 
 // Ask player name
 let playerName = prompt("Enter your name:") || "Player";
@@ -158,6 +163,22 @@ function shoot(direction) {
   arrows.push({el: arrow, x: bow.offsetLeft+40, y: bow.offsetTop, vx, vy});
 }
 
+// Continuous shooting logic
+function startShooting(direction) {
+  if (gameOver) return;
+  shooting = true;
+  shootDirection = direction;
+  shoot(direction);
+  shootInterval = setInterval(() => {
+    if (shooting) shoot(direction);
+  }, 200); // shoot every 0.2 seconds
+}
+
+function stopShooting() {
+  shooting = false;
+  clearInterval(shootInterval);
+}
+
 function moveArrows() {
   if (gameOver) return;
   arrows.forEach((arrow, index) => {
@@ -172,7 +193,6 @@ function moveArrows() {
       let arrRect = arrow.el.getBoundingClientRect();
 
       if (!(arrRect.right < headRect.left || arrRect.left > headRect.right || arrRect.bottom < headRect.top || arrRect.top > headRect.bottom)) {
-        // Hit
         score += 10;
         scoreBoard.textContent = `Score: ${score}`;
         gameArea.removeChild(head.el);
@@ -240,7 +260,7 @@ function launchFireworks() {
 }
 function animateFireworks() {
   ctx.clearRect(0,0,fireworksCanvas.width, fireworksCanvas.height);
-  particles.forEach((p,i)=>{
+  particles.forEach((p)=>{
     p.x += p.vx;
     p.y += p.vy;
     p.life--;
@@ -253,8 +273,17 @@ function animateFireworks() {
   if (particles.length>0) requestAnimationFrame(animateFireworks);
 }
 
+// Add hold events for shooting
+document.getElementById("forwardBtn").addEventListener("mousedown", () => startShooting("forward"));
+document.getElementById("forwardBtn").addEventListener("mouseup", stopShooting);
+document.getElementById("forwardBtn").addEventListener("mouseleave", stopShooting);
+
+document.getElementById("rightBtn").addEventListener("mousedown", () => startShooting("right"));
+document.getElementById("rightBtn").addEventListener("mouseup", stopShooting);
+document.getElementById("rightBtn").addEventListener("mouseleave", stopShooting);
+
 moveArrows();
 moveHeads();
 </script>
 </body>
-</html>
+  </html>
